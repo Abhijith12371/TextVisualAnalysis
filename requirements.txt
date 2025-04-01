@@ -1,0 +1,8 @@
+Flask
+flask-session
+google-generativeai
+matplotlib
+pandas
+plotly
+wordcloud
+werkzeug
