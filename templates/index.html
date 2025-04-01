@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Insight Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --primary-bg: #e0e5ec;
+            --shadow-light: #ffffff;
+            --shadow-dark: #b8b9be;
+            --text-primary: #4a4a4a;
+            --text-secondary: #5a5a5a;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .neumorphic {
+            border-radius: 15px;
+            background: var(--primary-bg);
+            box-shadow:  8px 8px 15px var(--shadow-dark), 
+                        -8px -8px 15px var(--shadow-light);
+        }
+        
+        .neumorphic-inset {
+            border-radius: 15px;
+            background: var(--primary-bg);
+            box-shadow: inset 5px 5px 10px var(--shadow-dark), 
+                       inset -5px -5px 10px var(--shadow-light);
+        }
+        
+        .sidebar {
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            border: none;
+            resize: none;
+        }
+        
+        .btn-neumorphic {
+            border-radius: 15px;
+            background: var(--primary-bg);
+            box-shadow:  5px 5px 10px var(--shadow-dark), 
+                        -5px -5px 10px var(--shadow-light);
+            border: none;
+            padding: 10px 24px;
+            color: var(--text-primary);
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-neumorphic:hover {
+            box-shadow: inset 5px 5px 10px var(--shadow-dark), 
+                       inset -5px -5px 10px var(--shadow-light);
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .card-content {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+        
+        .user-message {
+            background-color: #d1e7dd;
+            border-radius: 15px 15px 0 15px;
+            padding: 10px 15px;
+            margin-left: auto;
+        }
+        
+        .ai-message {
+            background-color: #f8f9fa;
+            border-radius: 15px 15px 15px 0;
+            padding: 10px 15px;
+            margin-right: auto;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar {
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-top: 20px;
+            }
+        }
+        
+        .spinner-container {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .visualization-container {
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        
+        .gemini-response div {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .gemini-response h3, .gemini-response h4 {
+            color: #0d6efd;
+            margin-top: 15px;
+        }
+        
+        .gemini-response ul, .gemini-response ol {
+            padding-left: 20px;
+        }
+    </style>
+     <style>
+        /* Main background */
+        .stApp {
+            background-color: #e0e5ec;
+            color: #4a4a4a;
+        }
+        
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: #e0e5ec !important;
+            box-shadow:  8px 0px 15px #b8b9be, 
+                        -8px 0px 15px #ffffff !important;
+            border-right: none !important;
+        }
+        
+        /* Text area */
+        .stTextArea>div>div>textarea {
+            border-radius: 15px !important;
+            background: #e0e5ec !important;
+            box-shadow: inset 5px 5px 10px #b8b9be, 
+                        inset -5px -5px 10px #ffffff !important;
+            border: none !important;
+            padding: 15px !important;
+        }
+        
+        /* Buttons */
+        .stButton>button {
+            border-radius: 15px !important;
+            background: #e0e5ec !important;
+            box-shadow:  5px 5px 10px #b8b9be, 
+                        -5px -5px 10px #ffffff !important;
+            border: none !important;
+            padding: 10px 24px !important;
+            color: #4a4a4a !important;
+            font-weight: 500 !important;
+            width: 100% !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .stButton>button:hover {
+            box-shadow: inset 5px 5px 10px #b8b9be, 
+                        inset -5px -5px 10px #ffffff !important;
+        }
+        
+        /* Cards */
+        .neumorphic-card {
+            padding: 20px;
+            border-radius: 15px;
+            background: #e0e5ec;
+            box-shadow:  8px 8px 15px #b8b9be, 
+                        -8px -8px 15px #ffffff;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: #4a4a4a;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .card-content {
+            color: #5a5a5a;
+            font-size: 16px;
+        }
+        
+        /* Divider */
+        hr {
+            border-top: 1px solid #d1d9e6 !important;
+            margin: 1.5rem 0 !important;
+        }
+        .gemini-analysis {
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.analysis-content {
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.analysis-content h4 {
+    color: #2c3e50;
+    margin-top: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.analysis-content b {
+    color: #3498db;
+}
+
+.analysis-content ul {
+    padding-left: 20px;
+}
+
+.analysis-content li {
+    margin-bottom: 8px;
+}
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 sidebar neumorphic">
+                <div class="text-center mb-4">
+                    <h2 class="mb-1">Text Insight</h2>
+                    <p class="text-muted">Analyze & Visualize Text Data</p>
+                </div>
+                
+                <form id="analysisForm" class="mb-4">
+                    <div class="mb-3">
+                        <label for="textInput" class="form-label">Enter your text for analysis:</label>
+                        <textarea id="textInput" class="form-control neumorphic-inset" rows="8" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-neumorphic">Analyze Text</button>
+                </form>
+                
+                <div id="chatInterface" style="display: none;">
+                    <h5 class="card-title">💬 Chat with Your Data</h5>
+                    <div id="chatHistory" class="chat-container mb-3 neumorphic-inset"></div>
+                    <form id="chatForm" class="d-flex">
+                        <input type="hidden" id="textHash" value="">
+                        <input type="text" id="chatInput" class="form-control neumorphic-inset me-2" placeholder="Ask about your text..." required>
+                        <button type="submit" class="btn btn-neumorphic">Send</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Main content -->
+            <div class="col-lg-9 main-content py-3">
+                <h1 class="mb-4">📊 Text Analysis Dashboard</h1>
+                
+                <!-- Loading spinner -->
+                <div id="spinner" class="spinner-container">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">🔍 Analyzing text with Gemini AI...</p>
+                </div>
+                
+                <!-- Results will be inserted here -->
+                <div id="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('analysisForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            analyzeText();
+        });
+        
+        document.getElementById('chatForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendChatMessage();
+        });
+        
+        function analyzeText() {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                alert('Please enter some text to analyze');
+                return;
+            }
+            
+            // Show loading spinner
+            document.getElementById('spinner').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            
+            // Send request to server
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',  // Changed to JSON
+                },
+                body: JSON.stringify({ text: text })     // Changed to JSON format
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide spinner
+                document.getElementById('spinner').style.display = 'none';
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+                
+                // Show chat interface and set text hash
+                document.getElementById('chatInterface').style.display = 'block';
+                document.getElementById('textHash').value = data.text_hash;
+                
+                // Clear chat history
+                document.getElementById('chatHistory').innerHTML = '';
+                
+                // Display results
+                displayAnalysisResults(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('spinner').style.display = 'none';
+                showError('An error occurred while analyzing the text.');
+            });
+        }
+        
+        function displayAnalysisResults(data) {
+            const basic = data.basic_stats;
+            const gemini = data.gemini_response;
+            const viz = data.visualizations;
+            
+            let resultsHTML = `
+                <div class="row">
+                    <!-- Column 1 -->
+                    <div class="col-md-6">
+                        <div class="neumorphic p-4 mb-4">
+                            <h3 class="card-title">📝 Basic Statistics</h3>
+                            <div class="card-content">
+                                ✏️ <b>Word Count:</b> ${basic.word_count}<br>
+                                🔤 <b>Character Count:</b> ${basic.char_count}<br>
+                                📜 <b>Sentence Count:</b> ${basic.sentence_count}<br>
+                                📏 <b>Avg. Word Length:</b> ${basic.avg_word_len}<br>
+                                😊 <b>Sentiment:</b> ${basic.sentiment}
+                            </div>
+                        </div>
+                        
+                        <div class="neumorphic visualization-container">
+                            <h3 class="card-title">☁️ Word Cloud</h3>
+                            <img src="data:image/png;base64,${viz.wordcloud}" alt="Word Cloud" class="img-fluid">
+                        </div>
+                    </div>
+                    
+                    <!-- Column 2 -->
+                    <div class="col-md-6">
+                        <div class="neumorphic p-4 mb-4">
+                            <h3 class="card-title">😊😞 Sentiment Analysis</h3>
+                            <div class="card-content">
+                                😊 <b>Positive words:</b> ${basic.positive_words}<br>
+                                😞 <b>Negative words:</b> ${basic.negative_words}<br>
+                                📊 <b>Sentiment score:</b> ${basic.sentiment_score.toFixed(1)}
+                            </div>
+                        </div>
+                        
+                        <div class="neumorphic visualization-container">
+                            <h3 class="card-title">📊 Sentiment Distribution</h3>
+                            <div id="sentimentChart"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="neumorphic visualization-container">
+                            <h3 class="card-title">📈 Most Common Words</h3>
+                            <div id="commonWordsChart"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="neumorphic p-4">
+                            <h3 class="card-title">🧠 Gemini AI Analysis</h3>
+                            <div class="card-content gemini-response">
+                                ${gemini}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('results').innerHTML = resultsHTML;
+            
+            // Render Plotly charts
+            if (typeof Plotly !== 'undefined') {
+                // Common words chart
+                Plotly.newPlot('commonWordsChart', [{
+                    x: viz.common_words.words,
+                    y: viz.common_words.counts,
+                    type: 'bar',
+                    marker: {
+                        color: '#4a89dc'
+                    }
+                }], {
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    font: {color: '#4a4a4a'},
+                    margin: {l: 20, r: 20, t: 30, b: 20}
+                });
+                
+                // Sentiment chart
+                Plotly.newPlot('sentimentChart', [{
+                    values: viz.sentiment.values,
+                    labels: viz.sentiment.labels,
+                    type: 'pie',
+                    hole: 0.6,
+                    marker: {
+                        colors: viz.sentiment.colors,
+                        line: {
+                            color: '#e0e5ec',
+                            width: 2
+                        }
+                    },
+                    textinfo: 'percent+label'
+                }], {
+                    showlegend: false,
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    font: {color: '#4a4a4a'}
+                });
+            }
+        }
+        
+        function sendChatMessage() {
+            const question = document.getElementById('chatInput').value.trim();
+            const textHash = document.getElementById('textHash').value;
+            
+            if (!question) return;
+            if (!textHash) {
+                showError('No text to analyze. Please analyze text first.');
+                return;
+            }
+            
+            // Add user message to chat
+            addChatMessage('user', question);
+            document.getElementById('chatInput').value = '';
+            
+            // Show loading in chat
+            const loadingId = 'loading-' + Date.now();
+            addChatMessage('ai', '<div class="spinner-border spinner-border-sm" role="status"></div> Thinking...', loadingId);
+            
+            // Scroll to bottom
+            const chatHistory = document.getElementById('chatHistory');
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            
+            // Send to server
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',  // Changed to JSON
+                },
+                body: JSON.stringify({  // Changed to JSON format
+                    question: question,
+                    text_hash: textHash
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove loading message
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) loadingElement.remove();
+                
+                if (data.error) {
+                    addChatMessage('ai', `<div class="text-danger">${data.error}</div>`);
+                    return;
+                }
+                
+                // Add AI response
+                addChatMessage('ai', data.response);
+                
+                // Scroll to bottom
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) loadingElement.remove();
+                addChatMessage('ai', `<div class="text-danger">Error getting response</div>`);
+            });
+        }
+        
+        function addChatMessage(role, content, id = null) {
+            const chatHistory = document.getElementById('chatHistory');
+            const messageDiv = document.createElement('div');
+            if (id) messageDiv.id = id;
+            messageDiv.className = `chat-message ${role}-message`;
+            messageDiv.innerHTML = content;
+            chatHistory.appendChild(messageDiv);
+        }
+        
+        function showError(message) {
+            document.getElementById('results').innerHTML = `
+                <div class="alert alert-danger">${message}</div>
+            `;
+        }
+    </script>
+</body>
+</html>
